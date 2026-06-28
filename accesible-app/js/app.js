@@ -41,11 +41,7 @@ const App = (() => {
 
     // Iniciar comunicación con n8n
     // En modo demo, simula eventos
-    Webhook.// Cambiar esto:
-Webhook.activarModoDemo();
-
-// Por esto:
-Webhook.iniciarPolling();
+    Webhook.activarModoDemo();
     // En producción, descomentar la siguiente línea:
     // Webhook.iniciarPolling();
 
@@ -252,13 +248,14 @@ Webhook.iniciarPolling();
     console.log('[APP] Procesando:', texto);
 
     // ── COMANDOS DE LLAMADA ──────────────────────────────────────
-    if (texto.includes('llamar') || texto.includes('llama') || texto.includes('llame')) {
+    if (texto.includes('llamar') || texto.includes('llama') || texto.includes('llame') || texto.includes('llam')) {
       const contacto = buscarContactoPorVoz(texto);
       if (contacto) {
+        Voz.hablar(`Llamando a ${contacto.nombre}.`);
         iniciarLlamada(contacto.id);
         return;
       } else {
-        Voz.hablar('No encontré ese contacto. Intenta de nuevo.');
+        Voz.hablar('No encontré ese contacto. Di el nombre completo, por ejemplo: llamar a Danielito.');
         return;
       }
     }
