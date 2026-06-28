@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Fondo circular oscuro -->
+  <circle cx="100" cy="100" r="100" fill="#333333"/>
+  <!-- Silueta de persona -->
+  <circle cx="100" cy="75" r="35" fill="#666666"/>
+  <ellipse cx="100" cy="160" rx="55" ry="45" fill="#666666"/>
+</svg>

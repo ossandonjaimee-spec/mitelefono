@@ -1,0 +1,180 @@
+{
+  "name": "04 - Cola de Eventos para la App",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "eventos-pendientes",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-polling",
+      "name": "Webhook: Polling App",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "notes": "La app consulta este endpoint cada 3 segundos para recibir eventos (llamadas, SMS). Query param: ?desde=timestamp"
+    },
+
+    {
+      "parameters": {
+        "jsCode": "// Obtener parámetro 'desde' del query string\nconst query  = $input.first().json.query || {};\nconst desde  = query.desde || (Date.now() - 10000).toString();\nconst desdeDate = new Date(parseInt(desde)).toISOString();\n\nreturn [{ json: { desde: desdeDate } }];"
+      },
+      "id": "parsear-desde",
+      "name": "Parsear parámetro 'desde'",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "cola_eventos",
+        "where": { "conditions": [{ "column": "timestamp", "condition": ">=", "value": "={{ $json.desde }}" }] },
+        "sort": [{ "column": "timestamp", "direction": "ASC" }],
+        "limit": 10
+      },
+      "id": "sqlite-cola",
+      "name": "SQLite: Leer Cola",
+      "type": "n8n-nodes-base.sqlite",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "credentials": { "sqlite": { "id": "1", "name": "SQLite MiTelefono" } }
+    },
+
+    {
+      "parameters": {
+        "jsCode": "// Construir respuesta con los eventos pendientes\nconst items   = $input.all();\nconst eventos = items\n  .filter(i => i.json && i.json.id)\n  .map(i => ({\n    id:        i.json.id,\n    tipo:      i.json.tipo,\n    datos:     typeof i.json.datos === 'string' ? JSON.parse(i.json.datos) : i.json.datos,\n    timestamp: i.json.timestamp\n  }));\n\nreturn [{ json: { eventos, total: eventos.length } }];"
+      },
+      "id": "formatear-eventos",
+      "name": "Formatear Respuesta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}"
+      },
+      "id": "resp-eventos",
+      "name": "Respuesta: Eventos",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1100, 300]
+    },
+
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "evento-app",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-push-evento",
+      "name": "Webhook: Agregar a Cola",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 600],
+      "notes": "Los flujos 01 y 02 llaman aquí para encolar eventos. Body: { tipo, datos }"
+    },
+
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "cola_eventos",
+        "columns": "tipo,datos,timestamp",
+        "additionalFields": {}
+      },
+      "id": "sqlite-push",
+      "name": "SQLite: Encolar Evento",
+      "type": "n8n-nodes-base.sqlite",
+      "typeVersion": 1,
+      "position": [460, 600],
+      "credentials": { "sqlite": { "id": "1", "name": "SQLite MiTelefono" } }
+    },
+
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"ok\": true, \"encolado\": true }"
+      },
+      "id": "resp-push-ok",
+      "name": "Respuesta: Encolado OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [680, 600]
+    },
+
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "obtener-mensajes",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-mensajes",
+      "name": "Webhook: Obtener Mensajes",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 900],
+      "notes": "La app pide historial de mensajes de un contacto. Query: ?contacto_id=mama&limite=20"
+    },
+
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "mensajes",
+        "where": {
+          "conditions": [{ "column": "contacto_id", "condition": "=", "value": "={{ $json.query.contacto_id }}" }]
+        },
+        "sort": [{ "column": "timestamp", "direction": "DESC" }],
+        "limit": "={{ $json.query.limite || 20 }}"
+      },
+      "id": "sqlite-mensajes",
+      "name": "SQLite: Leer Mensajes",
+      "type": "n8n-nodes-base.sqlite",
+      "typeVersion": 1,
+      "position": [460, 900],
+      "credentials": { "sqlite": { "id": "1", "name": "SQLite MiTelefono" } }
+    },
+
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst mensajes = items\n  .filter(i => i.json && i.json.id)\n  .map(i => ({\n    id:               i.json.id,\n    texto:            i.json.texto,\n    tipo:             i.json.tipo,\n    hora:             i.json.hora,\n    contacto_id:      i.json.contacto_id,\n    contacto_nombre:  i.json.contacto_nombre,\n    timestamp:        i.json.timestamp\n  }))\n  .reverse(); // Mostrar del más antiguo al más nuevo\n\nreturn [{ json: { mensajes, total: mensajes.length } }];"
+      },
+      "id": "formatear-mensajes",
+      "name": "Formatear Mensajes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 900]
+    },
+
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}"
+      },
+      "id": "resp-mensajes",
+      "name": "Respuesta: Mensajes",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 900]
+    }
+  ],
+  "connections": {
+    "Webhook: Polling App":      { "main": [[ { "node": "Parsear parámetro 'desde'", "type": "main", "index": 0 } ]] },
+    "Parsear parámetro 'desde'": { "main": [[ { "node": "SQLite: Leer Cola",         "type": "main", "index": 0 } ]] },
+    "SQLite: Leer Cola":         { "main": [[ { "node": "Formatear Respuesta",        "type": "main", "index": 0 } ]] },
+    "Formatear Respuesta":       { "main": [[ { "node": "Respuesta: Eventos",         "type": "main", "index": 0 } ]] },
+    "Webhook: Agregar a Cola":   { "main": [[ { "node": "SQLite: Encolar Evento",     "type": "main", "index": 0 } ]] },
+    "SQLite: Encolar Evento":    { "main": [[ { "node": "Respuesta: Encolado OK",     "type": "main", "index": 0 } ]] },
+    "Webhook: Obtener Mensajes": { "main": [[ { "node": "SQLite: Leer Mensajes",      "type": "main", "index": 0 } ]] },
+    "SQLite: Leer Mensajes":     { "main": [[ { "node": "Formatear Mensajes",         "type": "main", "index": 0 } ]] },
+    "Formatear Mensajes":        { "main": [[ { "node": "Respuesta: Mensajes",        "type": "main", "index": 0 } ]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "MiTelefono" }]
+}

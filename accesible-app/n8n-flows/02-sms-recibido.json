@@ -1,0 +1,99 @@
+{
+  "name": "02 - Detectar y Leer SMS",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sms-recibido",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-sms",
+      "name": "Webhook: SMS Recibido",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "notes": "Android/Tasker envía aquí cuando llega un SMS nuevo. Body: { numero, texto, timestamp }"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\n\nconst numero  = body.numero  || body.from   || 'desconocido';\nconst texto   = body.texto   || body.body   || body.message || '';\nconst hora    = new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });\n\n// Mapa de números a contactos\nconst mapaContactos = {\n  '+56912345678': { id: 'mama',   nombre: 'Mamá'      },\n  '+56987654321': { id: 'papa',   nombre: 'Papá'      },\n  '+56911222333': { id: 'hijo',   nombre: 'Carlos'    },\n  '+56944555666': { id: 'hija',   nombre: 'María'     },\n  '+56977888999': { id: 'doctor', nombre: 'Doctor'    }\n};\n\nconst contacto = mapaContactos[numero] || { id: 'desconocido', nombre: numero };\n\n// Validar que el mensaje no esté vacío\nif (!texto.trim()) {\n  return [{ json: { error: 'Mensaje vacío, se ignora' } }];\n}\n\nreturn [{\n  json: {\n    tipo: 'sms_recibido',\n    datos: {\n      numero,\n      contacto_id:      contacto.id,\n      nombre_mostrado:  contacto.nombre,\n      texto:            texto.trim(),\n      hora,\n      timestamp:        new Date().toISOString()\n    }\n  }\n}];"
+      },
+      "id": "procesar-sms",
+      "name": "Procesar: Identificar SMS",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.error }}",
+              "operation": "isEmpty"
+            }
+          ]
+        }
+      },
+      "id": "if-valido",
+      "name": "¿Mensaje válido?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "mensajes",
+        "columns": "contacto_id,contacto_nombre,numero,texto,tipo,hora,timestamp",
+        "additionalFields": {}
+      },
+      "id": "sqlite-sms",
+      "name": "SQLite: Guardar SMS",
+      "type": "n8n-nodes-base.sqlite",
+      "typeVersion": 1,
+      "position": [900, 200],
+      "credentials": { "sqlite": { "id": "1", "name": "SQLite MiTelefono" } }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3000/evento-app",
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ JSON.stringify({ tipo: 'sms_recibido', datos: $json.datos }) }}"
+      },
+      "id": "notificar-sms-app",
+      "name": "Notificar: Enviar SMS a App",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [900, 380]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"ok\": true }"
+      },
+      "id": "respuesta-sms-ok",
+      "name": "Respuesta: OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1120, 300]
+    }
+  ],
+  "connections": {
+    "Webhook: SMS Recibido":    { "main": [[ { "node": "Procesar: Identificar SMS",    "type": "main", "index": 0 } ]] },
+    "Procesar: Identificar SMS":{ "main": [[ { "node": "¿Mensaje válido?",              "type": "main", "index": 0 } ]] },
+    "¿Mensaje válido?": {
+      "main": [
+        [ { "node": "SQLite: Guardar SMS",         "type": "main", "index": 0 } ],
+        [ { "node": "Respuesta: OK",               "type": "main", "index": 0 } ]
+      ]
+    },
+    "SQLite: Guardar SMS":      { "main": [[ { "node": "Notificar: Enviar SMS a App",  "type": "main", "index": 0 } ]] },
+    "Notificar: Enviar SMS a App":{ "main": [[ { "node": "Respuesta: OK",              "type": "main", "index": 0 } ]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "MiTelefono" }]
+}

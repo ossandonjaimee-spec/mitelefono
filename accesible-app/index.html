@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<!--
+  =====================================================================
+  APLICACIÓN ACCESIBLE PARA PERSONAS CON BAJA VISIÓN
+  =====================================================================
+  Archivo: index.html
+  Función: Estructura principal de la interfaz. Define todas las
+           pantallas (contactos, llamada entrante, mensajes) que
+           el JavaScript carga y oculta según el estado de la app.
+
+  Diseño:
+  - Modo oscuro permanente (fondo #0a0a0a, texto #ffffff)
+  - Fuente mínima 28px, botones mínimo 80px de alto
+  - Sin menús ni navegación compleja
+  - Compatible con TalkBack (aria-label en todos los elementos)
+  =====================================================================
+-->
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <title>MiTeléfono Fácil</title>
+
+  <!-- Fuente grande y legible -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/estilos.css" />
+</head>
+<body>
+
+  <!-- ============================================================
+    BARRA DE ESTADO SUPERIOR
+    Muestra hora y estado del micrófono siempre visible
+  ============================================================ -->
+  <header id="barra-estado" role="banner" aria-label="Barra de estado">
+    <span id="reloj" aria-live="off">12:00</span>
+    <span id="estado-voz" aria-live="polite" aria-label="Estado del micrófono">
+      🎤 Voz lista
+    </span>
+    <button
+      id="btn-micro-global"
+      class="btn-voz-global"
+      onclick="App.activarEscucha()"
+      aria-label="Activar control por voz. Toca para hablar"
+    >
+      🎙️ HABLAR
+    </button>
+  </header>
+
+  <!-- ============================================================
+    PANTALLA 1: CONTACTOS PRINCIPALES
+    6 tarjetas grandes con foto, nombre y botones de acción
+  ============================================================ -->
+  <main id="pantalla-contactos" class="pantalla activa" role="main" aria-label="Mis contactos">
+
+    <h1 class="titulo-pantalla" aria-label="Pantalla principal, mis contactos">
+      📞 Mis Contactos
+    </h1>
+
+    <!-- Las tarjetas se generan dinámicamente por contactos.js -->
+    <div id="grid-contactos" class="grid-contactos" role="list" aria-label="Lista de contactos frecuentes">
+      <!-- Generado por JavaScript -->
+    </div>
+
+  </main>
+
+  <!-- ============================================================
+    PANTALLA 2: LLAMADA ENTRANTE
+    Ocupa toda la pantalla. Botones grandes de contestar/rechazar
+  ============================================================ -->
+  <section
+    id="pantalla-llamada-entrante"
+    class="pantalla pantalla-llamada"
+    role="alertdialog"
+    aria-modal="true"
+    aria-label="Llamada entrante"
+    aria-live="assertive"
+    hidden
+  >
+    <div class="contenido-llamada">
+      <p class="etiqueta-llamada" aria-hidden="true">📲 LLAMADA ENTRANTE</p>
+
+      <img
+        id="foto-llamante"
+        class="foto-llamada"
+        src="assets/avatar-default.svg"
+        alt=""
+        aria-hidden="true"
+      />
+
+      <p id="nombre-llamante" class="nombre-llamada" aria-live="assertive">
+        Mamá
+      </p>
+
+      <div class="botones-llamada" role="group" aria-label="Opciones de llamada">
+
+        <button
+          id="btn-contestar"
+          class="btn-contestar"
+          onclick="App.contestarLlamada()"
+          aria-label="Contestar llamada"
+        >
+          ✅ CONTESTAR
+        </button>
+
+        <button
+          id="btn-rechazar"
+          class="btn-rechazar"
+          onclick="App.rechazarLlamada()"
+          aria-label="Rechazar llamada"
+        >
+          ❌ RECHAZAR
+        </button>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+    PANTALLA 3: EN LLAMADA ACTIVA
+    Muestra foto y nombre durante la llamada. Botón colgar.
+  ============================================================ -->
+  <section
+    id="pantalla-en-llamada"
+    class="pantalla pantalla-llamada pantalla-activa-llamada"
+    role="dialog"
+    aria-modal="true"
+    aria-label="En llamada"
+    hidden
+  >
+    <div class="contenido-llamada">
+      <p class="etiqueta-llamada" aria-hidden="true">📞 EN LLAMADA</p>
+
+      <img
+        id="foto-en-llamada"
+        class="foto-llamada"
+        src="assets/avatar-default.svg"
+        alt=""
+        aria-hidden="true"
+      />
+
+      <p id="nombre-en-llamada" class="nombre-llamada">Mamá</p>
+      <p id="cronometro-llamada" class="cronometro" aria-live="off">0:00</p>
+
+      <button
+        id="btn-colgar"
+        class="btn-rechazar btn-colgar"
+        onclick="App.colgarLlamada()"
+        aria-label="Colgar llamada"
+      >
+        📵 COLGAR
+      </button>
+    </div>
+  </section>
+
+  <!-- ============================================================
+    PANTALLA 4: MENSAJES
+    Lista de mensajes y lectura en voz alta
+  ============================================================ -->
+  <section
+    id="pantalla-mensajes"
+    class="pantalla"
+    role="dialog"
+    aria-label="Mensajes"
+    hidden
+  >
+    <div class="cabecera-pantalla">
+      <button
+        class="btn-volver"
+        onclick="App.volver()"
+        aria-label="Volver a contactos"
+      >
+        ← VOLVER
+      </button>
+      <h2 class="titulo-pantalla">💬 Mensajes</h2>
+    </div>
+
+    <!-- Selector de contacto para mensajes -->
+    <div id="selector-contacto-mensaje" aria-label="Selecciona un contacto">
+      <p class="instruccion-grande">¿Con quién?</p>
+      <div id="lista-contactos-msg" class="grid-contactos grid-mini" role="list">
+        <!-- Generado por JavaScript -->
+      </div>
+    </div>
+
+    <!-- Lista de mensajes del contacto seleccionado -->
+    <div id="contenido-mensajes" hidden>
+      <p id="nombre-contacto-mensaje" class="nombre-contacto-chat">Mamá</p>
+
+      <div
+        id="lista-mensajes"
+        class="lista-mensajes"
+        role="log"
+        aria-label="Conversación"
+        aria-live="polite"
+      >
+        <!-- Mensajes generados por JavaScript -->
+      </div>
+
+      <!-- Área de respuesta por voz -->
+      <div id="area-respuesta" class="area-respuesta" hidden>
+        <p id="texto-dictado" class="texto-dictado" aria-live="polite">
+          Di tu mensaje...
+        </p>
+        <button
+          id="btn-dictar"
+          class="btn-accion btn-verde"
+          onclick="App.iniciarDictado()"
+          aria-label="Dictar mensaje por voz"
+        >
+          🎤 DICTAR MENSAJE
+        </button>
+        <button
+          id="btn-enviar-mensaje"
+          class="btn-accion btn-verde"
+          onclick="App.enviarMensajeDictado()"
+          aria-label="Enviar mensaje"
+          hidden
+        >
+          📤 ENVIAR
+        </button>
+        <button
+          id="btn-cancelar-mensaje"
+          class="btn-accion btn-rojo"
+          onclick="App.cancelarMensaje()"
+          aria-label="Cancelar mensaje"
+        >
+          ✕ CANCELAR
+        </button>
+      </div>
+
+      <button
+        class="btn-accion btn-verde"
+        onclick="App.mostrarAreaRespuesta()"
+        aria-label="Responder mensaje por voz"
+      >
+        🎤 RESPONDER
+      </button>
+    </div>
+  </section>
+
+  <!-- ============================================================
+    PANTALLA 5: CONFIRMACIÓN (¿Enviar? ¿Estás seguro?)
+    Preguntas de sí/no para flujos críticos
+  ============================================================ -->
+  <section
+    id="pantalla-confirmacion"
+    class="pantalla pantalla-confirmacion"
+    role="alertdialog"
+    aria-modal="true"
+    aria-label="Confirmación"
+    aria-live="polite"
+    hidden
+  >
+    <p id="texto-confirmacion" class="pregunta-confirmacion">
+      ¿Deseas enviar este mensaje?
+    </p>
+    <div class="botones-confirmacion" role="group">
+      <button
+        id="btn-si"
+        class="btn-confirmacion btn-verde"
+        onclick="App.confirmar(true)"
+        aria-label="Sí, confirmar"
+      >
+        ✅ SÍ
+      </button>
+      <button
+        id="btn-no"
+        class="btn-confirmacion btn-rojo"
+        onclick="App.confirmar(false)"
+        aria-label="No, cancelar"
+      >
+        ❌ NO
+      </button>
+    </div>
+  </section>
+
+  <!-- ============================================================
+    PANEL DE VOZ (indicador flotante)
+    Aparece cuando el reconocimiento de voz está activo
+  ============================================================ -->
+  <div
+    id="panel-voz"
+    class="panel-voz"
+    role="status"
+    aria-live="assertive"
+    aria-label="Reconocimiento de voz activo"
+    hidden
+  >
+    <div class="onda-voz" aria-hidden="true">
+      <span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <p id="texto-escuchando">Escuchando...</p>
+    <p id="texto-reconocido" class="texto-reconocido"></p>
+  </div>
+
+  <!-- ============================================================
+    NOTIFICACIÓN TOAST
+    Mensajes breves accesibles (aparece y desaparece solo)
+  ============================================================ -->
+  <div
+    id="toast"
+    class="toast"
+    role="alert"
+    aria-live="assertive"
+    aria-atomic="true"
+    hidden
+  ></div>
+
+  <!-- ============================================================
+    SCRIPTS (orden importante)
+  ============================================================ -->
+  <script src="js/contactos.js"></script>   <!-- Datos de contactos -->
+  <script src="js/voz.js"></script>          <!-- TTS y reconocimiento -->
+  <script src="js/llamadas.js"></script>     <!-- Lógica de llamadas -->
+  <script src="js/mensajes.js"></script>     <!-- Lógica de mensajes -->
+  <script src="js/webhook.js"></script>      <!-- Comunicación n8n -->
+  <script src="js/app.js"></script>          <!-- Controlador principal -->
+
+</body>
+</html>

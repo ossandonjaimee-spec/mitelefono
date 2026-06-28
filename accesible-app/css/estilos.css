@@ -1,0 +1,633 @@
+/*
+  =====================================================================
+  ESTILOS PRINCIPALES — MiTeléfono Fácil
+  =====================================================================
+  Archivo: css/estilos.css
+  Función: Define toda la apariencia visual de la aplicación.
+
+  Principios de diseño:
+  - Modo oscuro total: fondo negro, texto blanco puro
+  - Fuente mínima 28px en cuerpo, 48px en acciones clave
+  - Botones mínimo 80px de alto para táctil accesible
+  - Sin sombras tenues: bordes gruesos de alto contraste
+  - Paleta: verde #00e676 (acción positiva), rojo #ff1744 (negativa)
+  - Radio de borde 20px para aspecto amigable y moderno
+  =====================================================================
+*/
+
+/* ===== VARIABLES GLOBALES ===== */
+:root {
+  --color-fondo:       #0a0a0a;
+  --color-superficie:  #1a1a1a;
+  --color-tarjeta:     #222222;
+  --color-borde:       #444444;
+  --color-texto:       #ffffff;
+  --color-texto-dim:   #cccccc;
+  --color-verde:       #00e676;
+  --color-verde-hover: #00c853;
+  --color-rojo:        #ff1744;
+  --color-rojo-hover:  #d50000;
+  --color-azul:        #40c4ff;
+  --color-amarillo:    #ffd740;
+
+  --fuente-principal:  'Nunito', sans-serif;
+  --radio:             20px;
+  --radio-grande:      32px;
+
+  --tam-texto-base:    28px;
+  --tam-texto-grande:  42px;
+  --tam-texto-gigante: 56px;
+  --tam-texto-enorme:  72px;
+}
+
+/* ===== RESET Y BASE ===== */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  font-size: var(--tam-texto-base);
+  background-color: var(--color-fondo);
+  color: var(--color-texto);
+  font-family: var(--fuente-principal);
+  /* Evita zoom accidental en iOS */
+  touch-action: manipulation;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-fondo);
+  /* Quitar selección de texto para UX limpia */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ===== BARRA DE ESTADO SUPERIOR ===== */
+#barra-estado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #111111;
+  border-bottom: 3px solid var(--color-borde);
+  padding: 14px 20px;
+  gap: 12px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+#reloj {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--color-amarillo);
+  min-width: 80px;
+}
+
+#estado-voz {
+  font-size: 22px;
+  color: var(--color-verde);
+  flex: 1;
+  text-align: center;
+}
+
+.btn-voz-global {
+  background: var(--color-verde);
+  color: #000000;
+  border: none;
+  border-radius: var(--radio);
+  padding: 14px 22px;
+  font-size: 24px;
+  font-weight: 900;
+  font-family: var(--fuente-principal);
+  cursor: pointer;
+  min-height: 60px;
+  transition: transform 0.1s, background 0.2s;
+}
+.btn-voz-global:active {
+  transform: scale(0.95);
+  background: var(--color-verde-hover);
+}
+
+/* ===== PANTALLAS (sistema de vistas) ===== */
+.pantalla {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  animation: fadeIn 0.25s ease;
+}
+.pantalla.activa {
+  display: flex;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== TÍTULOS DE PANTALLA ===== */
+.titulo-pantalla {
+  font-size: var(--tam-texto-grande);
+  font-weight: 900;
+  color: var(--color-texto);
+  text-align: center;
+  margin-bottom: 24px;
+  line-height: 1.2;
+}
+
+/* ===== GRID DE CONTACTOS ===== */
+.grid-contactos {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* En pantallas anchas, 3 columnas */
+@media (min-width: 700px) {
+  .grid-contactos {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Versión mini para selector de mensajes */
+.grid-mini {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+/* ===== TARJETA DE CONTACTO ===== */
+.tarjeta-contacto {
+  background: var(--color-tarjeta);
+  border: 3px solid var(--color-borde);
+  border-radius: var(--radio-grande);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 14px 16px;
+  gap: 14px;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.1s;
+  /* Asegura que el toque sea grande */
+  min-height: 260px;
+}
+.tarjeta-contacto:active {
+  transform: scale(0.97);
+  border-color: var(--color-verde);
+}
+
+/* Foto del contacto — grande */
+.foto-contacto {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid var(--color-borde);
+  background: #333;
+  flex-shrink: 0;
+}
+
+/* Nombre del contacto */
+.nombre-contacto {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--color-texto);
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* Botones dentro de la tarjeta */
+.botones-tarjeta {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+/* Botón llamar — verde enorme */
+.btn-llamar {
+  flex: 2;
+  background: var(--color-verde);
+  color: #000000;
+  border: none;
+  border-radius: var(--radio);
+  padding: 16px 8px;
+  font-size: 26px;
+  font-weight: 900;
+  font-family: var(--fuente-principal);
+  cursor: pointer;
+  min-height: 70px;
+  transition: background 0.15s, transform 0.1s;
+  line-height: 1;
+}
+.btn-llamar:active {
+  background: var(--color-verde-hover);
+  transform: scale(0.96);
+}
+
+/* Botón mensajes — azul */
+.btn-mensaje {
+  flex: 1;
+  background: var(--color-azul);
+  color: #000000;
+  border: none;
+  border-radius: var(--radio);
+  padding: 16px 6px;
+  font-size: 24px;
+  font-weight: 900;
+  font-family: var(--fuente-principal);
+  cursor: pointer;
+  min-height: 70px;
+  transition: background 0.15s, transform 0.1s;
+}
+.btn-mensaje:active {
+  background: #0091ea;
+  transform: scale(0.96);
+}
+
+/* ===== PANTALLA DE LLAMADA ENTRANTE Y ACTIVA ===== */
+.pantalla-llamada {
+  background: var(--color-fondo);
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  justify-content: center;
+  align-items: center;
+  padding: 30px 20px;
+}
+
+.contenido-llamada {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  width: 100%;
+  max-width: 500px;
+}
+
+.etiqueta-llamada {
+  font-size: 28px;
+  color: var(--color-texto-dim);
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  animation: parpadeo 1.2s ease-in-out infinite;
+}
+
+@keyframes parpadeo {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* Foto gigante en llamada */
+.foto-llamada {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 6px solid var(--color-verde);
+  background: #333;
+  box-shadow: 0 0 40px rgba(0, 230, 118, 0.3);
+}
+
+.nombre-llamada {
+  font-size: var(--tam-texto-enorme);
+  font-weight: 900;
+  color: var(--color-texto);
+  text-align: center;
+  line-height: 1.1;
+}
+
+.cronometro {
+  font-size: var(--tam-texto-grande);
+  color: var(--color-texto-dim);
+  font-weight: 700;
+}
+
+.botones-llamada {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+/* Botón contestar — verde grande */
+.btn-contestar {
+  background: var(--color-verde);
+  color: #000000;
+  border: none;
+  border-radius: var(--radio-grande);
+  padding: 28px;
+  font-size: var(--tam-texto-grande);
+  font-weight: 900;
+  font-family: var(--fuente-principal);
+  cursor: pointer;
+  width: 100%;
+  min-height: 100px;
+  transition: transform 0.1s, background 0.15s;
+}
+.btn-contestar:active {
+  transform: scale(0.96);
+  background: var(--color-verde-hover);
+}
+
+/* Botón rechazar/colgar — rojo grande */
+.btn-rechazar {
+  background: var(--color-rojo);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radio-grande);
+  padding: 28px;
+  font-size: var(--tam-texto-grande);
+  font-weight: 900;
+  font-family: var(--fuente-principal);
+  cursor: pointer;
+  width: 100%;
+  min-height: 100px;
+  transition: transform 0.1s, background 0.15s;
+}
+.btn-rechazar:active {
+  transform: scale(0.96);
+  background: var(--color-rojo-hover);
+}
+
+.btn-colgar {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+/* ===== PANTALLA DE MENSAJES ===== */
+.cabecera-pantalla {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.btn-volver {
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  border: 3px solid var(--color-borde);
+  border-radius: var(--radio);
+  padding: 14px 20px;
+  font-size: 24px;
+  font-weight: 900;
+  font-family: var(--fuente-principal);
+  cursor: pointer;
+  min-height: 70px;
+  flex-shrink: 0;
+}
+.btn-volver:active { opacity: 0.7; }
+
+.instruccion-grande {
+  font-size: var(--tam-texto-grande);
+  font-weight: 900;
+  text-align: center;
+  margin-bottom: 20px;
+  color: var(--color-amarillo);
+}
+
+.nombre-contacto-chat {
+  font-size: var(--tam-texto-grande);
+  font-weight: 900;
+  text-align: center;
+  color: var(--color-azul);
+  margin-bottom: 16px;
+}
+
+/* Lista de mensajes */
+.lista-mensajes {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+  max-height: 40vh;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+/* Burbuja de mensaje */
+.burbuja {
+  max-width: 85%;
+  padding: 18px 22px;
+  border-radius: var(--radio-grande);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.burbuja.recibido {
+  background: var(--color-superficie);
+  border: 2px solid var(--color-borde);
+  align-self: flex-start;
+  color: var(--color-texto);
+}
+.burbuja.enviado {
+  background: #003300;
+  border: 2px solid var(--color-verde);
+  align-self: flex-end;
+  color: var(--color-verde);
+}
+
+.hora-mensaje {
+  font-size: 20px;
+  color: var(--color-texto-dim);
+  margin-top: 6px;
+  display: block;
+}
+
+/* Área de respuesta */
+.area-respuesta {
+  background: var(--color-superficie);
+  border: 3px solid var(--color-azul);
+  border-radius: var(--radio-grande);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.texto-dictado {
+  font-size: 26px;
+  color: var(--color-texto-dim);
+  min-height: 80px;
+  line-height: 1.5;
+}
+
+/* Botones de acción generales */
+.btn-accion {
+  border: none;
+  border-radius: var(--radio);
+  padding: 20px;
+  font-size: 28px;
+  font-weight: 900;
+  font-family: var(--fuente-principal);
+  cursor: pointer;
+  width: 100%;
+  min-height: 80px;
+  transition: transform 0.1s;
+}
+.btn-accion:active { transform: scale(0.96); }
+
+.btn-verde {
+  background: var(--color-verde);
+  color: #000000;
+}
+.btn-rojo {
+  background: var(--color-rojo);
+  color: #ffffff;
+}
+
+/* ===== PANTALLA DE CONFIRMACIÓN ===== */
+.pantalla-confirmacion {
+  background: rgba(0,0,0,0.95);
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 24px;
+}
+
+.pregunta-confirmacion {
+  font-size: var(--tam-texto-gigante);
+  font-weight: 900;
+  text-align: center;
+  color: var(--color-texto);
+  line-height: 1.3;
+  margin-bottom: 40px;
+}
+
+.botones-confirmacion {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.btn-confirmacion {
+  border: none;
+  border-radius: var(--radio-grande);
+  padding: 32px;
+  font-size: var(--tam-texto-gigante);
+  font-weight: 900;
+  font-family: var(--fuente-principal);
+  cursor: pointer;
+  min-height: 110px;
+  transition: transform 0.1s;
+}
+.btn-confirmacion:active { transform: scale(0.96); }
+
+/* ===== PANEL DE VOZ FLOTANTE ===== */
+.panel-voz {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #111111;
+  border: 3px solid var(--color-verde);
+  border-radius: var(--radio-grande);
+  padding: 20px 30px;
+  z-index: 500;
+  text-align: center;
+  min-width: 280px;
+  max-width: 90vw;
+  animation: slideUp 0.2s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+  to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
+}
+
+/* Animación de onda de sonido */
+.onda-voz {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 6px;
+  height: 40px;
+  margin-bottom: 12px;
+}
+.onda-voz span {
+  display: block;
+  width: 8px;
+  background: var(--color-verde);
+  border-radius: 4px;
+  animation: onda 1s ease-in-out infinite;
+}
+.onda-voz span:nth-child(1) { animation-delay: 0.0s; height: 16px; }
+.onda-voz span:nth-child(2) { animation-delay: 0.1s; height: 28px; }
+.onda-voz span:nth-child(3) { animation-delay: 0.2s; height: 40px; }
+.onda-voz span:nth-child(4) { animation-delay: 0.1s; height: 28px; }
+.onda-voz span:nth-child(5) { animation-delay: 0.0s; height: 16px; }
+
+@keyframes onda {
+  0%, 100% { transform: scaleY(0.4); opacity: 0.5; }
+  50%       { transform: scaleY(1.0); opacity: 1.0; }
+}
+
+#texto-escuchando {
+  font-size: 28px;
+  color: var(--color-verde);
+  font-weight: 900;
+}
+
+.texto-reconocido {
+  font-size: 24px;
+  color: var(--color-texto);
+  margin-top: 8px;
+  min-height: 30px;
+  font-style: italic;
+}
+
+/* ===== TOAST (notificación breve) ===== */
+.toast {
+  position: fixed;
+  top: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #222222;
+  border: 3px solid var(--color-amarillo);
+  border-radius: var(--radio);
+  padding: 18px 28px;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--color-amarillo);
+  z-index: 1000;
+  text-align: center;
+  max-width: 90vw;
+  animation: fadeIn 0.2s ease;
+}
+
+/* ===== ACCESIBILIDAD — FOCO VISIBLE ===== */
+:focus-visible {
+  outline: 4px solid var(--color-amarillo);
+  outline-offset: 4px;
+}
+
+/* ===== REDUCCIÓN DE MOVIMIENTO (prefers-reduced-motion) ===== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ===== SCROLL PERSONALIZADO ===== */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--color-fondo); }
+::-webkit-scrollbar-thumb { background: var(--color-borde); border-radius: 4px; }
+
+/* ===== UTILIDADES ===== */
+[hidden] { display: none !important; }

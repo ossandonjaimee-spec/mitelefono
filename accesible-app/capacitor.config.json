@@ -1,0 +1,39 @@
+{
+  "appId": "cl.mitelefono.facil",
+  "appName": "MiTeléfono Fácil",
+  "webDir": ".",
+  "bundledWebRuntime": false,
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1500,
+      "backgroundColor": "#0a0a0a",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "dark",
+      "backgroundColor": "#111111"
+    },
+    "Keyboard": {
+      "resize": "none"
+    }
+  },
+  "android": {
+    "allowMixedContent": true,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": true,
+    "minWebViewVersion": 60,
+    "backgroundColor": "#0a0a0a",
+    "permissions": [
+      "android.permission.CALL_PHONE",
+      "android.permission.READ_PHONE_STATE",
+      "android.permission.READ_CALL_LOG",
+      "android.permission.SEND_SMS",
+      "android.permission.RECEIVE_SMS",
+      "android.permission.READ_SMS",
+      "android.permission.RECORD_AUDIO",
+      "android.permission.VIBRATE",
+      "android.permission.INTERNET",
+      "android.permission.READ_CONTACTS"
+    ]
+  }
+}

@@ -1,0 +1,137 @@
+{
+  "name": "03 - Enviar SMS y Registrar Eventos",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "enviar-sms",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-enviar-sms",
+      "name": "Webhook: Enviar SMS",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 200],
+      "notes": "La app llama aquí cuando el usuario dictó un mensaje. Body: { contacto_id, telefono, texto }"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "registrar-evento",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-evento",
+      "name": "Webhook: Registrar Evento",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 500],
+      "notes": "Historial general: llamadas, mensajes, comandos de voz"
+    },
+
+    {
+      "parameters": {
+        "jsCode": "// Preparar SMS para envío\nconst body = $input.first().json.body || $input.first().json;\n\nconst telefono        = body.telefono        || '';\nconst texto           = body.texto           || '';\nconst contacto_id     = body.contacto_id     || 'desconocido';\nconst contacto_nombre = body.contacto_nombre || 'Contacto';\n\nif (!telefono || !texto) {\n  throw new Error('Faltan campos: telefono y texto son requeridos');\n}\n\n// Limpiar texto: quitar caracteres problemáticos para SMS\nconst textoLimpio = texto\n  .replace(/[<>\"']/g, '')\n  .trim()\n  .substring(0, 160); // Límite SMS estándar\n\nreturn [{\n  json: {\n    telefono,\n    texto:            textoLimpio,\n    contacto_id,\n    contacto_nombre,\n    timestamp:        new Date().toISOString(),\n    hora:             new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })\n  }\n}];"
+      },
+      "id": "preparar-sms",
+      "name": "Preparar: Validar SMS",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 200]
+    },
+
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3000/enviar-sms-android",
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ JSON.stringify({ telefono: $json.telefono, texto: $json.texto }) }}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "enviar-android",
+      "name": "Android: Enviar SMS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [680, 200],
+      "notes": "Llama al servidor local en el Android que ejecuta el SMS real. Ver bridge Android en docs/android-bridge.md"
+    },
+
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "mensajes",
+        "columns": "contacto_id,contacto_nombre,numero,texto,tipo,hora,timestamp",
+        "additionalFields": {}
+      },
+      "id": "sqlite-enviado",
+      "name": "SQLite: Guardar Enviado",
+      "type": "n8n-nodes-base.sqlite",
+      "typeVersion": 1,
+      "position": [900, 200],
+      "credentials": { "sqlite": { "id": "1", "name": "SQLite MiTelefono" } }
+    },
+
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"ok\": true, \"exito\": true, \"mensaje\": \"SMS enviado\" }"
+      },
+      "id": "resp-sms-ok",
+      "name": "Respuesta: SMS OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1100, 200]
+    },
+
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nconst tipo = body.tipo || 'evento_generico';\n\n// Mapear tipo a tabla adecuada\nconst tablas = {\n  llamada_saliente:   'historial_llamadas',\n  llamada_entrante:   'historial_llamadas',\n  llamada_contestada: 'historial_llamadas',\n  llamada_rechazada:  'historial_llamadas',\n  llamada_finalizada: 'historial_llamadas',\n  mensaje_enviado:    'mensajes',\n  mensaje_recibido:   'mensajes',\n  comando_voz:        'historial_comandos'\n};\n\nreturn [{\n  json: {\n    tipo,\n    tabla:     tablas[tipo] || 'historial_general',\n    datos:     JSON.stringify(body),\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "clasificar-evento",
+      "name": "Clasificar Evento",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 500]
+    },
+
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "historial_general",
+        "columns": "tipo,datos,timestamp",
+        "additionalFields": {}
+      },
+      "id": "sqlite-evento",
+      "name": "SQLite: Guardar Evento",
+      "type": "n8n-nodes-base.sqlite",
+      "typeVersion": 1,
+      "position": [680, 500],
+      "credentials": { "sqlite": { "id": "1", "name": "SQLite MiTelefono" } }
+    },
+
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"ok\": true }"
+      },
+      "id": "resp-evento-ok",
+      "name": "Respuesta: Evento OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 500]
+    }
+  ],
+  "connections": {
+    "Webhook: Enviar SMS":      { "main": [[ { "node": "Preparar: Validar SMS",    "type": "main", "index": 0 } ]] },
+    "Preparar: Validar SMS":    { "main": [[ { "node": "Android: Enviar SMS",       "type": "main", "index": 0 } ]] },
+    "Android: Enviar SMS":      { "main": [[ { "node": "SQLite: Guardar Enviado",   "type": "main", "index": 0 } ]] },
+    "SQLite: Guardar Enviado":  { "main": [[ { "node": "Respuesta: SMS OK",         "type": "main", "index": 0 } ]] },
+    "Webhook: Registrar Evento":{ "main": [[ { "node": "Clasificar Evento",         "type": "main", "index": 0 } ]] },
+    "Clasificar Evento":        { "main": [[ { "node": "SQLite: Guardar Evento",    "type": "main", "index": 0 } ]] },
+    "SQLite: Guardar Evento":   { "main": [[ { "node": "Respuesta: Evento OK",      "type": "main", "index": 0 } ]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "MiTelefono" }]
+}

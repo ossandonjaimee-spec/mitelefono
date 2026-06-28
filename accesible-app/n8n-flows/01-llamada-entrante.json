@@ -1,0 +1,87 @@
+{
+  "name": "01 - Detectar Llamada Entrante",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "llamada-entrante",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-llamada",
+      "name": "Webhook: Llamada Entrante",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "notes": "Android envía aquí cuando detecta una llamada. Requiere app Android con permiso READ_PHONE_STATE o integración via Tasker/Automate."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extraer datos de la llamada entrante\nconst body = $input.first().json.body || $input.first().json;\n\nconst numero = body.numero || body.phone_number || 'desconocido';\nconst nombre = body.nombre || body.caller_name || 'Número desconocido';\n\n// Mapear número a ID de contacto (debe coincidir con contactos.js)\nconst mapaContactos = {\n  '+56912345678': { id: 'mama',       nombre: 'Mamá' },\n  '+56987654321': { id: 'papa',       nombre: 'Papá' },\n  '+56911222333': { id: 'hijo',       nombre: 'Carlos' },\n  '+56944555666': { id: 'hija',       nombre: 'María' },\n  '+56977888999': { id: 'doctor',     nombre: 'Doctor' },\n  '131':          { id: 'emergencia', nombre: 'Emergencia' }\n};\n\nconst contacto = mapaContactos[numero] || { id: 'desconocido', nombre };\n\nreturn [{\n  json: {\n    tipo: 'llamada_entrante',\n    datos: {\n      numero,\n      contacto_id:      contacto.id,\n      nombre_mostrado:  contacto.nombre,\n      timestamp:        new Date().toISOString()\n    }\n  }\n}];"
+      },
+      "id": "procesar-llamada",
+      "name": "Procesar: Identificar Contacto",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "historial_llamadas",
+        "columns": "numero,contacto_id,contacto_nombre,tipo,timestamp",
+        "additionalFields": {}
+      },
+      "id": "sqlite-llamada",
+      "name": "SQLite: Guardar Llamada",
+      "type": "n8n-nodes-base.sqlite",
+      "typeVersion": 1,
+      "position": [680, 200],
+      "credentials": { "sqlite": { "id": "1", "name": "SQLite MiTelefono" } }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3000/evento-app",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "evento", "value": "={{ JSON.stringify($json) }}" }
+          ]
+        }
+      },
+      "id": "notificar-app",
+      "name": "Notificar: Enviar a App",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [680, 380],
+      "notes": "Envía el evento a la cola de eventos que la app consulta por polling"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"ok\": true, \"mensaje\": \"Llamada registrada\" }"
+      },
+      "id": "respuesta-ok",
+      "name": "Respuesta: OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Webhook: Llamada Entrante": {
+      "main": [[ { "node": "Procesar: Identificar Contacto", "type": "main", "index": 0 } ]]
+    },
+    "Procesar: Identificar Contacto": {
+      "main": [
+        [ { "node": "SQLite: Guardar Llamada",   "type": "main", "index": 0 } ],
+        [ { "node": "Notificar: Enviar a App",   "type": "main", "index": 0 } ]
+      ]
+    },
+    "SQLite: Guardar Llamada":  { "main": [[ { "node": "Respuesta: OK", "type": "main", "index": 0 } ]] },
+    "Notificar: Enviar a App":  { "main": [[ { "node": "Respuesta: OK", "type": "main", "index": 0 } ]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "MiTelefono" }]
+}
