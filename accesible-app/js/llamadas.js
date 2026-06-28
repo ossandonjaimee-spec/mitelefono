@@ -53,17 +53,7 @@ const Llamadas = (() => {
       return;
     }
 
-    if (!confirmado) {
-      // Pedir confirmación antes de llamar
-      App.mostrarConfirmacion(
-        `¿Llamar a ${contacto.nombre}?`,
-        () => iniciarConfirmado(contacto),
-        null
-      );
-      Voz.hablar(`¿Llamar a ${contacto.nombre}? Toca Sí o No.`);
-      return;
-    }
-
+    // Llamar directo sin pedir confirmación para mayor accesibilidad
     iniciarConfirmado(contacto);
   }
 
