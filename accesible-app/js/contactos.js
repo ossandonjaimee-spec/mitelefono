@@ -35,10 +35,10 @@ const CONTACTOS = [
   },
   {
     id: 'hijo',
-    nombre: 'Carlos',
-    telefono: '+56911222333',
-    foto: 'assets/carlos.jpg',
-    alias: ['carlos', 'hijo', 'carlitos'],
+    nombre: 'Danielito',
+    telefono: '+56932594757',
+    foto: 'assets/danielito.jpg',
+    alias: ['danielito', 'daniel', 'hijo', 'dani', 'danielle'],
     emoji: '👦'
   },
   {
