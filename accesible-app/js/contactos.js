@@ -20,7 +20,7 @@ const CONTACTOS = [
   {
     id: 'mama',
     nombre: 'Mamá',
-    telefono: '+56972906774',
+    telefono: '+56912345678',
     foto: 'assets/mama.jpg',
     alias: ['mamá', 'mama', 'ma'],  // Palabras que activan llamada por voz
     emoji: '👩'                      // Se usa si no hay foto
@@ -28,23 +28,23 @@ const CONTACTOS = [
   {
     id: 'papa',
     nombre: 'Papá',
-    telefono: '+56942840751',
+    telefono: '+56987654321',
     foto: 'assets/papa.jpg',
     alias: ['papá', 'papa', 'pa'],
     emoji: '👨'
   },
   {
-    id: 'Daniel',
-    nombre: 'Hijo',
-    telefono: '+56932594757',
+    id: 'hijo',
+    nombre: 'Carlos',
+    telefono: '+56911222333',
     foto: 'assets/carlos.jpg',
     alias: ['carlos', 'hijo', 'carlitos'],
     emoji: '👦'
   },
   {
     id: 'hija',
-    nombre: 'Valentina',
-    telefono: '+5698308867',
+    nombre: 'María',
+    telefono: '+56944555666',
     foto: 'assets/maria.jpg',
     alias: ['maría', 'maria', 'hija', 'marita'],
     emoji: '👧'
